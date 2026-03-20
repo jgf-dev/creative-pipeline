@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+venv
+
+# Environment files
+.env
+.env.*
+
+# Local configs and MCP
+.mcp.json
+.vscode/mcp.json
+opencode.json
+.codex/
+.gemini/

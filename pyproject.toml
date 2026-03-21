@@ -1,21 +1,19 @@
 [project]
-name            = "creative-pipeline"
+name            = "creagen"
 version         = "0.1.0"
 description     = "Add your description here"
 readme          = "README.md"
+authors         = [{name = "jgeofil", email = "jeremy.geo@gmail.com"}]
 requires-python = ">=3.14"
 dependencies    = [
-    "djlint>=1.36.4",
-    "dotenv>=0.9.9",
-    "icecream>=2.1.10",
-    "isort>=8.0.1",
-    "jinja2>=3.1.6",
-    "langgraph-cli[inmem]>=0.4.17",
-    "langsmith>=0.7.17",
     "pillow>=12.1.1",
-    "rembg[gpu]>=2.0.72",
-    "rich>=14.3.3",
-    "together",
-    "transformers>=5.3.0",
-    "typing>=3.10.0.0",
+    "together>=2.5.0",
+    "jinja2>=3.1.6",
+    "rich>=14.2.0",
+    "dotenv>=0.9.9",
+    "requests>=2.32.5",
 ]
+
+[build-system]
+requires      = ["uv_build>=0.10.10,<0.11.0"]
+build-backend = "uv_build"

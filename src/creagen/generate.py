@@ -1,20 +1,25 @@
-from typing import Literal, Union
-from datetime import datetime
-from creagen.utils import save_image
-from dotenv import load_dotenv
-from PIL import Image
 import random
+
+from dotenv import load_dotenv
 from rich import print
-from together import omit, Together, Omit
-from together.types import ImageDataB64, ImageDataURL
+from together import Omit, Together, omit
+
+from creagen.utils import save_image
 
 load_dotenv()
 client = Together()
 
 
-
-
-def genImage(prompt: str, model: str, negative_prompt: str|Omit = omit, guidance: float = 4.0, steps: int = 20, seed: int = random.randint(0, 1000000), height: int|Omit = omit, width: int|Omit = omit):
+def genImage(
+    prompt: str,
+    model: str,
+    negative_prompt: str | Omit = omit,
+    guidance: float = 4.0,
+    steps: int = 20,
+    seed: int = random.randint(0, 1000000),
+    height: int | Omit = omit,
+    width: int | Omit = omit,
+):
     response = response = client.images.generate(
         prompt=prompt,
         model=model,
@@ -35,11 +40,8 @@ def genImage(prompt: str, model: str, negative_prompt: str|Omit = omit, guidance
         save_image(image.url, "image")
 
 
-
-
-
 if __name__ == "__main__":
     genImage(
-        prompt="a very good looking 18yo football player shirtless",
-        model="Rundiffusion/Juggernaut-Lightning-Flux"
+        prompt="a very good looking 18yo football player after a game, sweaty and shirtless, wearing only his football pants",
+        model="Rundiffusion/Juggernaut-Lightning-Flux",
     )

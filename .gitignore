@@ -20,3 +20,5 @@ venv
 opencode.json
 .codex/
 .gemini/
+uv.lock
+.safetensors

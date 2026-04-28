@@ -21,4 +21,5 @@ opencode.json
 .codex/
 .gemini/
 uv.lock
-.safetensors
+*.safetensors
+*.lock

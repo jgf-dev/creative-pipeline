@@ -8,6 +8,11 @@ from google.genai import types
 
 
 def generate():
+    """
+    Stream content from the Gemini model and print generated parts to stdout.
+    
+    Creates a genai.Client using the GEMINI_API_KEY environment variable, requests content from the "gemini-3.1-pro-preview" model with a configured system instruction and tools, and writes any streamed part text, executable_code, and code_execution_result to standard output as they arrive.
+    """
     client = genai.Client(
         api_key=os.environ.get("GEMINI_API_KEY"),
     )

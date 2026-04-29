@@ -1,12 +1,17 @@
-import torch
-import os
 import json
+import os
 import shutil
-from safetensors.torch import load_file, save_file
+
+from safetensors import safe_open
+from safetensors.torch import save_file
 from tqdm import tqdm
 
 source_path = os.path.join(os.path.dirname(__file__), "gemma-4b-4bit")
 target_path = os.path.join(os.path.dirname(__file__), "gemma-4b-pruned-sharded")
+
+# Clean up target directory to save space
+if os.path.exists(target_path):
+    shutil.rmtree(target_path)
 os.makedirs(target_path, exist_ok=True)
 
 print(f"Reading config from {source_path}...")
@@ -17,55 +22,64 @@ with open(os.path.join(source_path, "config.json"), "r") as f:
 new_config = config.copy()
 new_config["audio_config"] = None
 new_config["vision_config"] = None
-# Ensure it loads with the right class
 new_config["architectures"] = ["Gemma4ForConditionalGeneration"]
 
-# Load original weights
 st_path = os.path.join(source_path, "model.safetensors")
-print(f"Loading weights from {st_path}...")
-state_dict = load_file(st_path)
+print(f"Opening {st_path} for streaming...")
 
-print("Pruning keys...")
-new_state_dict = {}
-for key, value in state_dict.items():
-    # Skip multimodal components
-    if any(x in key for x in ["audio_tower", "vision_tower", "embed_audio", "embed_vision"]):
-        continue
-    new_state_dict[key] = value
-
-print(f"Sharding model into 500MB chunks...")
-shard_size_limit = 500 * 1024 * 1024 
-
+shard_size_limit = 500 * 1024 * 1024  # 500MB
 current_shard = {}
 current_shard_size = 0
 shard_idx = 1
 weight_map = {}
 
-# Sort keys: put the largest tensors at the end or handle them specially
-# Actually, sorting alphabetically is fine, but we need to ensure the big one doesn't block everything
-sorted_keys = sorted(new_state_dict.keys())
+total_size_processed = 0
 
-for key in tqdm(sorted_keys):
-    value = new_state_dict[key]
-    size = value.numel() * value.element_size()
-    
-    if current_shard_size + size > shard_size_limit and current_shard:
-        shard_name = f"model-{shard_idx:05d}-of-XXXXX.safetensors"
-        save_file(current_shard, os.path.join(target_path, shard_name))
-        for k in current_shard.keys():
-            weight_map[k] = shard_name
-        shard_idx += 1
-        current_shard = {}
-        current_shard_size = 0
-    
-    current_shard[key] = value
-    current_shard_size += size
+# Use safe_open to avoid loading everything into RAM
+with safe_open(st_path, framework="pt", device="cpu") as f:
+    keys = f.keys()
+    # Filter keys to exclude multimodal parts
+    filtered_keys = [k for k in keys if not any(x in k for x in ["audio_tower", "vision_tower", "embed_audio", "embed_vision"])]
 
+    print(f"Processing {len(filtered_keys)} tensors out of {len(keys)}...")
+
+    for key in tqdm(sorted(filtered_keys)):
+        tensor = f.get_tensor(key)
+        size = tensor.numel() * tensor.element_size()
+        total_size_processed += size
+
+        # If adding this tensor exceeds the limit, save the current shard first
+        # UNLESS the current shard is empty (case for tensors > 500MB)
+        if current_shard_size + size > shard_size_limit and current_shard:
+            shard_name = f"model-{shard_idx:05d}-of-XXXXX.safetensors"
+            save_file(current_shard, os.path.join(target_path, shard_name))
+            for k in current_shard.keys():
+                weight_map[k] = shard_name
+            shard_idx += 1
+            current_shard = {}
+            current_shard_size = 0
+
+        current_shard[key] = tensor
+        current_shard_size += size
+
+        # If a single tensor is huge, we save it immediately in its own shard
+        if current_shard_size > shard_size_limit:
+            shard_name = f"model-{shard_idx:05d}-of-XXXXX.safetensors"
+            save_file(current_shard, os.path.join(target_path, shard_name))
+            for k in current_shard.keys():
+                weight_map[k] = shard_name
+            shard_idx += 1
+            current_shard = {}
+            current_shard_size = 0
+
+# Save any remaining tensors
 if current_shard:
     shard_name = f"model-{shard_idx:05d}-of-XXXXX.safetensors"
     save_file(current_shard, os.path.join(target_path, shard_name))
     for k in current_shard.keys():
         weight_map[k] = shard_name
+else:
+    shard_idx -= 1  # Adjust if the last tensor was saved in the loop
 
 total_shards = shard_idx
 print(f"Finalizing {total_shards} shards...")
@@ -76,17 +90,15 @@ for i in range(1, total_shards + 1):
     new_path = os.path.join(target_path, new_name)
     if os.path.exists(old_path):
         os.rename(old_path, new_path)
-    
-    # Update weight map
+
+    # Update weight map with final names
     for k, v in weight_map.items():
         if v == old_name:
             weight_map[k] = new_name
 
 # Save index and updated config
-index = {
-    "metadata": {"total_size": sum(v.numel() * v.element_size() for v in new_state_dict.values())},
-    "weight_map": weight_map
-}
+index = {"metadata": {"total_size": total_size_processed}, "weight_map": weight_map}
+
 with open(os.path.join(target_path, "model.safetensors.index.json"), "w") as f:
     json.dump(index, f, indent=2)
 
@@ -95,8 +107,8 @@ with open(os.path.join(target_path, "config.json"), "w") as f:
 
 # Copy tokenizer files
 print("Copying tokenizer files...")
-for f in ["tokenizer.json", "tokenizer_config.json", "chat_template.jinja", "generation_config.json"]:
-    src_f = os.path.join(source_path, f)
+for f_name in ["tokenizer.json", "tokenizer_config.json", "chat_template.jinja", "generation_config.json"]:
+    src_f = os.path.join(source_path, f_name)
     if os.path.exists(src_f):
         shutil.copy(src_f, target_path)
 

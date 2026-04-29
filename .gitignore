@@ -20,3 +20,4 @@ venv
 opencode.json
 .codex/
 .gemini/
+*.safetensors

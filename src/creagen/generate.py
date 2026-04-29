@@ -1,20 +1,38 @@
-from typing import Literal, Union
-from datetime import datetime
-from creagen.utils import save_image
-from dotenv import load_dotenv
-from PIL import Image
 import random
+
+from dotenv import load_dotenv
 from rich import print
-from together import omit, Together, Omit
-from together.types import ImageDataB64, ImageDataURL
+from together import Omit, Together, omit
+
+from creagen.utils import save_image
 
 load_dotenv()
 client = Together()
 
 
-
-
-def genImage(prompt: str, model: str, negative_prompt: str|Omit = omit, guidance: float = 4.0, steps: int = 20, seed: int = random.randint(0, 1000000), height: int|Omit = omit, width: int|Omit = omit):
+def genImage(
+    prompt: str,
+    model: str,
+    negative_prompt: str | Omit = omit,
+    guidance: float = 4.0,
+    steps: int = 20,
+    seed: int = random.randint(0, 1000000),
+    height: int | Omit = omit,
+    width: int | Omit = omit,
+):
+    """
+    Generate images from a text prompt, print each resulting image URL, and save the images to disk.
+    
+    Parameters:
+        prompt (str): Text prompt describing the desired image content.
+        model (str): Model identifier to use for image generation.
+        negative_prompt (str | Omit): Optional negative prompt to bias generation away from specified content; use `omit` to skip.
+        guidance (float): Guidance scale controlling adherence to the prompt.
+        steps (int): Number of diffusion steps to run.
+        seed (int): Random seed used for generation; default is chosen at call time with random.randint(0, 1000000).
+        height (int | Omit): Optional image height in pixels; use `omit` to use the model/default.
+        width (int | Omit): Optional image width in pixels; use `omit` to use the model/default.
+    """
     response = response = client.images.generate(
         prompt=prompt,
         model=model,
@@ -35,11 +53,8 @@ def genImage(prompt: str, model: str, negative_prompt: str|Omit = omit, guidance
         save_image(image.url, "image")
 
 
-
-
-
 if __name__ == "__main__":
     genImage(
-        prompt="a very good looking 18yo football player shirtless",
-        model="Rundiffusion/Juggernaut-Lightning-Flux"
+        prompt="a very good looking 18yo football player after a game, sweaty and shirtless, wearing only his football pants",
+        model="Rundiffusion/Juggernaut-Lightning-Flux",
     )

@@ -1,17 +1,26 @@
 [project]
-name            = "creagen"
-version         = "0.1.0"
-description     = "Add your description here"
-readme          = "README.md"
-authors         = [{name = "jgeofil", email = "jeremy.geo@gmail.com"}]
+name = "creagen"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [{name = "jgeofil", email = "jeremy.geo@gmail.com"}]
 requires-python = ">=3.14"
-dependencies    = [
+dependencies = [
     "pillow>=12.2.0",
     "together>=2.5.0",
     "jinja2>=3.1.6",
     "rich>=14.2.0",
     "dotenv>=0.9.9",
     "requests>=2.33.0",
+    "respan-ai>=4.0.0",
+    "respan-instrumentation-openai>=1.0.1",
+    "openai>=2.31.0",
+    "python-dotenv>=1.2.2",
+    "google-genai>=1.73.1",
+    "transformers>=5.6.2",
+    "torch>=2.11.0",
+    "accelerate>=1.13.0",
+    "bitsandbytes>=0.49.2",
 ]
 
 [build-system]

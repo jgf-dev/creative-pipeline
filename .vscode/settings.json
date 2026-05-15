@@ -13,7 +13,7 @@
 	"python.analysis.autoImportCompletions": true,
 	"python.analysis.typeCheckingMode": "basic",
 	"python.globalModuleInstallation": false,
-	"python.languageServer": "Pylance",
+	"python.languageServer": "Jedi",
 	"python.terminal.activateEnvInCurrentTerminal": true,
 	"python.terminal.executeInFileDir": true,
 	"python.terminal.focusAfterLaunch": true,

@@ -1,3 +1,5 @@
+
+
 [project]
 name = "creagen"
 version = "0.1.0"
@@ -21,6 +23,7 @@ dependencies = [
     "torch>=2.11.0",
     "accelerate>=1.13.0",
     "bitsandbytes>=0.49.2",
+    "portkey-ai>=1.1.12",
 ]
 
 [build-system]
